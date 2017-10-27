@@ -1,4 +1,5 @@
 #include<time.h>
+#include"sysLib.h"
 
 int main(int argc, char** argv)
 {

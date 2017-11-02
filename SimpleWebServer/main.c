@@ -7,7 +7,7 @@ void readRequestHead(rio_t *rp);
 
 int parseUri(char *uri, char *fileName, char *cgiArgs);
 
-void serveStatic(int  fd, char *fileType, int fileSize);
+void serveStatic(int fd, char *fileType, int fileSize);
 
 void getFileType(char *fileName, char *fileType);
 
@@ -18,7 +18,7 @@ void clientError(int fd, char *cause, char *errNum, char *shortMsg, char *longMs
 int main(int argc, char **argv) {
     int listenFd, connFd, port, clientLen;
     struct sockaddr_in clientAddr;
-
+    pid_t pid;
     if (argc != 2) {
         fprintf(stderr, "usage : %s <port>\n", argv[0]);
         exit(1);
@@ -29,7 +29,12 @@ int main(int argc, char **argv) {
     while (1) {
         clientLen = sizeof(clientAddr);
         connFd = Accept(listenFd, (SA *) &clientAddr, &clientLen);
-        doIt(connFd);
+        if ((pid = fork()) == 0){
+            Close(listenFd);
+            doIt(connFd);
+            Close(connFd);
+            exit(0);
+        }
         Close(connFd);
     }
 }
@@ -172,12 +177,7 @@ void serveDynamic(int fd, char *filename, char *cgiargs) {
     }
     Wait(NULL); /* Parent waits for and reaps child */ //line:netp:servedynamic:wait
 }
-/* $end serve_dynamic */
 
-/*
- * clienterror - returns an error message to the client
- */
-/* $begin clienterror */
 void clientError(int fd, char *cause, char *errnum,
                  char *shortmsg, char *longmsg) {
     char buf[MAXLINE], body[MAXBUF];
